@@ -19,10 +19,11 @@ A simple example looks like this:
 let pca9685 = PCA9685(supportedBoard: .RaspberryPiPlusZero)
 
 // This sets the frequency for all channels
+// Range: 24 - 1526 Hz
 pca9685.frequency = 1440 // Hz
 
 // Can set an individual channel's on and off steps.
-// Range: 0 - 4095
+// Range: 0 - 4095 Steps
 // Example: ~50% Duty Cycle
 pca9685.setChannel(0, onStep: 0, offStep: 2048)
 
