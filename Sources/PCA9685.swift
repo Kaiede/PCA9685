@@ -77,10 +77,10 @@ public class PCA9685 {
 
     private let endpoint: BoardI2CEndpoint
 
-    public init(channel: BoardI2CChannel, address: Address = .pca9685) {
+    public init(controller: BoardI2CController, address: Address = .pca9685) {
         self.frequency = 0
         
-        self.endpoint = channel[address.rawValue]
+        self.endpoint = controller[address.rawValue]
         guard self.endpoint.reachable else {
             fatalError("I2C Address is Unreachable")
         }
