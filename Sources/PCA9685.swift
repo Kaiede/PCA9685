@@ -31,7 +31,7 @@
 
 import SingleBoard
 
-public enum Address: Int {
+public enum Address: UInt8 {
     case pca9685     = 0x40
 }
 
@@ -77,10 +77,10 @@ public class PCA9685 {
 
     private let endpoint: BoardI2CEndpoint
 
-    public init(controller: BoardI2CController, address: Address = .pca9685) {
+    public init(i2cBus: BoardI2CBus, address: Address = .pca9685) {
         self.frequency = 0
         
-        self.endpoint = controller[address.rawValue]
+        self.endpoint = i2cBus[address.rawValue]
         guard self.endpoint.reachable else {
             fatalError("I2C Address is Unreachable")
         }

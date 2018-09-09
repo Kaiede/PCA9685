@@ -16,7 +16,7 @@ extension Package.Dependency {
 let package = Package(
     name: "PCA9685",
     dependencies: [
-        .Package(url: "https://github.com/Kaiede/SingleBoard.git", from: "0.1.1"),
+        .Package(url: "https://github.com/Kaiede/SingleBoard.git", from: "0.2.2"),
     ],
     swiftLanguageVersions: [3, 4]
 )
