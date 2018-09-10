@@ -29,9 +29,9 @@
     import Darwin.C
 #endif
 
-import SwiftyGPIO
+import SingleBoard
 
-public enum Address: Int {
+public enum Address: UInt8 {
     case pca9685     = 0x40
 }
 
@@ -68,40 +68,6 @@ struct Mode2: OptionSet {
     static let invert      = Mode2(rawValue: 0x10)
 }
 
-extension I2CInterface {
-    func writeMode1(_ address: Address, value: Mode1) {
-        self.writeByte(address, command: .mode1, value: value.rawValue)
-    }
-
-    func writeMode2(_ address: Address, value: Mode2) {
-        self.writeByte(address, command: .mode2, value: value.rawValue)
-    }
-
-    func writeByte(_ address: Address, command: Register, value: UInt8) {
-        self.writeByte(address.rawValue, command: command.rawValue, value: value)
-    }
-
-    func writeWord(_ address: Address, command: Register, value: UInt16) {
-        self.writeWord(address.rawValue, command: command.rawValue, value: value)
-    }
-
-    func readMode1(_ address: Address) -> Mode1 {
-        return Mode1(rawValue: self.readByte(address, command: .mode1))
-    }
-
-    func readMode2(_ address: Address) -> Mode2 {
-        return Mode2(rawValue: self.readByte(address, command: .mode2))
-    }
-
-    func readByte(_ address: Address, command: Register) -> UInt8 {
-        return self.readByte(address.rawValue, command: command.rawValue)
-    }
-
-    func readWord(_ address: Address, command: Register) -> UInt16 {
-        return self.readWord(address.rawValue, command: command.rawValue)
-    }
-}
-
 public class PCA9685 {
     public var frequency: UInt {
         didSet {
@@ -109,32 +75,28 @@ public class PCA9685 {
         }
     }
 
-    private let address: Address
-    private let i2c: I2CInterface
+    private let endpoint: BoardI2CEndpoint
 
-    public init(supportedBoard: SupportedBoard, address: Address = .pca9685) {
+    public init(i2cBus: BoardI2CBus, address: Address = .pca9685) {
         self.frequency = 0
-        self.address = address
-
-        let i2cs = SwiftyGPIO.hardwareI2Cs(for: supportedBoard)!
-        self.i2c = i2cs[1]
-
-        guard self.i2c.isReachable(self.address.rawValue) else {
+        
+        self.endpoint = i2cBus[address.rawValue]
+        guard self.endpoint.reachable else {
             fatalError("I2C Address is Unreachable")
         }
 
         // Now, Configure the PCA9685
         self.setAllChannels(onStep: 0, offStep: 0)
-        self.i2c.writeMode2(self.address, value: [.outDrv])
-        self.i2c.writeMode1(self.address, value: [.allCall])
+        self.endpoint.write(to: Register.mode2, value: Mode2.outDrv)
+        self.endpoint.write(to: Register.mode1, value: Mode1.allCall)
 
         // Wait for Oscillator
         usleep(5)
 
         // Reset Sleep, Set Auto Increment (for writeWord)
-        let mode1 = self.i2c.readMode1(self.address)
+        let mode1: Mode1 = self.endpoint.read(from: Register.mode1)
         let setupMode1 = mode1.subtracting([.sleep]).union([.autoInc])
-        self.i2c.writeMode1(self.address, value: setupMode1)
+        self.endpoint.write(to: Register.mode1, value: setupMode1)
 
         // Wait for Oscillator
         usleep(5)
@@ -146,13 +108,13 @@ public class PCA9685 {
         let commandOn = Register.ledOnBase.offsetBy(4 * Int(channel))
         let commandOff = Register.ledOffBase.offsetBy(4 * Int(channel))
 
-        self.i2c.writeWord(self.address.rawValue, command: commandOn, value: onStep)
-        self.i2c.writeWord(self.address.rawValue, command: commandOff, value: offStep)
+        self.endpoint.writeWord(to: commandOn, value: onStep)
+        self.endpoint.writeWord(to: commandOff, value: offStep)
     }
 
     public func setAllChannels(onStep: UInt16, offStep: UInt16) {
-        self.i2c.writeWord(self.address, command: .allLedOn, value: onStep)
-        self.i2c.writeWord(self.address, command: .allLedOff, value: offStep)
+        self.endpoint.writeWord(to: Register.allLedOn, value: onStep)
+        self.endpoint.writeWord(to: Register.allLedOff, value: offStep)
     }
 
     func onFrequencyChanged() {
@@ -165,16 +127,16 @@ public class PCA9685 {
         let prescale = UInt8(prescaleFlt + 0.5)
 
         // Go To Sleep & Set Prescale
-        let mode1 = self.i2c.readMode1(self.address)
+        let mode1: Mode1 = self.endpoint.read(from: Register.mode1)
         let sleepMode = mode1.subtracting([.restart]).union([.sleep])
-        self.i2c.writeMode1(self.address, value: sleepMode)
-        self.i2c.writeByte(self.address, command: .prescale, value: prescale)
-        self.i2c.writeMode1(self.address, value: mode1)
+        self.endpoint.write(to: Register.mode1, value: sleepMode)
+        self.endpoint.writeByte(to: Register.prescale, value: prescale)
+        self.endpoint.write(to: Register.mode1, value: mode1)
 
         usleep(5)
 
         // Restart
         let restartMode = mode1.union([.restart])
-        self.i2c.writeMode1(self.address, value: restartMode)
+        self.endpoint.write(to: Register.mode1, value: restartMode)
     }
 }
