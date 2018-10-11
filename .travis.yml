@@ -56,4 +56,3 @@ matrix:
 script:
   - swift package reset
   - swift build
-  - swift test
