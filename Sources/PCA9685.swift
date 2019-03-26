@@ -31,10 +31,6 @@
 
 import SingleBoard
 
-public enum Address: UInt8 {
-    case pca9685     = 0x40
-}
-
 enum Register: UInt8 {
     case mode1       = 0x00
     case mode2       = 0x01
@@ -69,6 +65,8 @@ struct Mode2: OptionSet {
 }
 
 public class PCA9685 {
+    public static let defaultAdafruitAddress: UInt8 = 0x40
+
     public var frequency: UInt {
         didSet {
             self.onFrequencyChanged()
@@ -77,10 +75,10 @@ public class PCA9685 {
 
     private let endpoint: BoardI2CEndpoint
 
-    public init(i2cBus: BoardI2CBus, address: Address = .pca9685) {
+    public init(i2cBus: BoardI2CBus, address: UInt8 = defaultAdafruitAddress) {
         self.frequency = 0
         
-        self.endpoint = i2cBus[address.rawValue]
+        self.endpoint = i2cBus[address]
         guard self.endpoint.reachable else {
             fatalError("I2C Address is Unreachable")
         }
