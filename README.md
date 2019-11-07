@@ -1,6 +1,6 @@
 # PCA9685
 
-[![Build Status](https://github.com/Kaiede/SingleBoard/workflows/CI/badge.svg)](https://github.com/Kaiede/SingleBoard/actions)
+[![Build Status](https://github.com/Kaiede/PCA9685/workflows/CI/badge.svg)](https://github.com/Kaiede/PCA9685/actions)
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
 ![Swift](https://img.shields.io/badge/Swift-5.x-brightgreen.svg?style=flat)
